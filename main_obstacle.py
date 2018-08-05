@@ -51,10 +51,9 @@ if __name__ == "__main__":
       param_vals = {'learning_rate': [0.001], 'epoch': [50], 'batch_size':[50],
                'seq_length':[5],'num_rnn_layers':[2],'num_hid_units':[4],'reg_parameter':[0.0015],'noise_std':[0.01]}
   
-<<<<<<< HEAD
+
   #save global flags for results folder etc
-=======
->>>>>>> 55655629124d476db7826d8a19ec409433aa2ca7
+
   dm.set_global_flags(model_type,timestamp)
   dm.save_settings(param_vals) 
   
