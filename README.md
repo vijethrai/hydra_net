@@ -1,2 +1,2 @@
 # hydra_net
-master branch for multi headed neural nets for kinematics predictions
+working branch for hydra_net- multi headed neural nets for kinematics predictions
