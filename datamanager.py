@@ -164,9 +164,9 @@ def get_input_feature_filenames(datadir, include_str, exclude_str):
     
     if ~(exclude_str =='None'):
          ex_matches = [s for s in x_feature_all_list if exclude_str in str(s)]
-
+         
          for match in ex_matches :
-        
+             print ("Excluding: ",match) 
              x_feature_all_list.pop(x_feature_all_list.index(match))
         
         
@@ -341,11 +341,11 @@ def save_settings(param_vals)     :
      p_df=pd.DataFrame.from_dict(dict([ (k,pd.Series(v)) for k,v in param_vals.items() ]),orient='index')
      data_config_df=data_config_df.append(p_df)
      
-     timstamped_path=results_dir[0] +  model_type + '/'+ timestamp 
+     timstamped_path=results_dir[0] 
      if not os.path.exists(timstamped_path):
          os.makedirs(timstamped_path)
          
-     data_config_df.to_csv(path_or_buf=timstamped_path +'/run_settings.csv ')
+     data_config_df.to_csv(path_or_buf=timstamped_path +'run_settings.csv ')
      
      return 
 ''''

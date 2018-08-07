@@ -16,7 +16,7 @@ import time
 
 
 #main ?
-num_trials=3;
+num_trials=5;
 bSaveEveryTrial = False;
 
 def append_to_log(log_dict,temp_dict):

@@ -40,10 +40,10 @@ if __name__ == "__main__":
 
 
  
-  param_vals = {'learning_rate': [0.001], 'epoch': [20], 'batch_size':[32],
-               'seq_length':[10],'num_rnn_layers':[2,4],'num_hid_units':[4],'reg_parameter':[0.0015],'noise_std':[0.01]}
+  param_vals = {'learning_rate': [0.001], 'epoch': [50], 'batch_size':[32,50],
+               'seq_length':[5,10,20,100],'num_rnn_layers':[2],'num_hid_units':[4],'reg_parameter':[0.0015,0.0025],'noise_std':[0.01,0.1]}
 
-  model_type='LSTM_FC'
+  model_type='LSTM'
   
   dm.set_global_flags(model_type,timestamp)
   dm.save_settings(param_vals) 

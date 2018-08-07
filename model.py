@@ -177,7 +177,7 @@ class RNN_Model(object):
                  
                    
                    if self.net_type == 'LSTM':                   
-                        self.rnn_layers = tf.contrib.rnn.MultiRNNCell([self.get_LSTM(self.num_hidden) for _ in range(self.num_rnn_layers)])
+                        self.rnn_layers = tf.contrib.rnn.MultiRNNCell([self.get_cudnnLSTM(self.num_hidden) for _ in range(self.num_rnn_layers)])
                  
                    elif self.net_type == 'GRU':
                         print ('GRU Architecture')
@@ -329,7 +329,8 @@ class RNN_Model(object):
 
          bSaveInput = True;
           # here starts one trial
-         config = tf.ConfigProto()
+         #config = tf.ConfigProto()
+         config=tf.ConfigProto(log_device_placement=True)
          #config.gpu_options.per_process_gpu_memory_fraction = 0.6
          config.gpu_options.allow_growth = True 
        	 with tf.Session(config=config,graph=self.graph) as sess:
@@ -355,8 +356,8 @@ class RNN_Model(object):
 
                         #print loss every 20 epochs
                    if iter_epochs % 5 == 0:
-                        [loss_out_this_epoch] = sess.run([self.performance], feed_dict={self.std_noise_tf:self.inj_noise_std})
-                        print ("Epoch ",str(iter_epochs) +" Last Batch MSE ",(loss_out_this_epoch))
+                       # [loss_out_this_epoch] = sess.run([self.performance], feed_dict={self.std_noise_tf:self.inj_noise_std})
+                        print ("Epoch ",str(iter_epochs) +" Last Batch MSE ",(sess.run([self.performance], feed_dict={self.std_noise_tf:self.inj_noise_std})))
                              
               
               
@@ -388,7 +389,14 @@ class RNN_Model(object):
          lstm_cells = tf.nn.rnn_cell.DropoutWrapper(lstm_cells, input_keep_prob=1.0, output_keep_prob=1.0,state_keep_prob=1.0)
          return lstm_cells
 
-
+    @staticmethod
+    def get_cudnnLSTM(n_hidden):
+         print (" cUDA compatible LSTM cell")
+         #lstm_cells=tf.contrib.cudnn_rnn.CudnnLSTM(num_units=n_hidden,num_layers=1)
+ 
+         lstm_cells=tf.contrib.cudnn_rnn.CudnnCompatibleLSTMCell(num_units=n_hidden)
+         #lstm_cells = tf.nn.rnn_cell.DropoutWrapper(lstm_cells, input_keep_prob=flt_in_keep, output_keep_prob=flt_out_keep,state_keep_prob=flt_state_keep)
+         return lstm_cells
     @staticmethod
     def gaussian_noise_layer(input_layer, std):
          print ("Gaussian Noise added",tf.shape(input_layer))
