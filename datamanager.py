@@ -33,7 +33,7 @@ import pandas as pd
   
 
 
-b_PrintShapes=False
+b_PrintShapes=True
 
 results_dir =[]
 timestamp =[]
@@ -161,6 +161,11 @@ def get_input_feature_filenames(datadir, include_str, exclude_str):
 
   #x_feature_types=[];
     x_feature_all_list=os.listdir(datadir[0]);
+    
+    if  ~(include_str == 'all'):   
+        print ("Including only",include_str)
+        x_feature_all_list = [s for s in x_feature_all_list if include_str in str(s)]
+    
     
     if ~(exclude_str =='None'):
          ex_matches = [s for s in x_feature_all_list if exclude_str in str(s)]
@@ -495,7 +500,12 @@ def normalizeEachFeature(list_unNormalizedData, b_Train):
         
     return list_normalized
 
-
+def clearNormScalerList():
+     global l_norm_scaler
+     l_norm_scaler=[[],[]]
+     
+     return;
+     
 def standardizeEachFeature(list_nonStdData,b_Train):   
    
    # this is for sliding window edition
@@ -584,6 +594,9 @@ def preProcessData(_trainX,_trainY,_testX,_testY):
        
        [_trainX,_trainY]=normalizeEachFeature([_trainX,_trainY],b_Train=True)
        [_testX,_testY]=normalizeEachFeature([_testX,_testY],b_Train=False)
+       #clear scaler after train and test have been normalized
+       
+       clearNormScalerList()
        
    elif b_standardize_data == True :
        
