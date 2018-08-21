@@ -20,7 +20,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from time import sleep
-
+import math
 import os
 import scipy.io as sio 
 from sklearn.preprocessing import MinMaxScaler
@@ -28,7 +28,7 @@ from sklearn.preprocessing import StandardScaler
 from skimage.util.shape import view_as_windows
 from math import sqrt
 import pandas as pd
-
+import itertools
 
   
 
@@ -38,7 +38,7 @@ b_PrintShapes=True
 results_dir =[]
 timestamp =[]
 model_type=[]
-b_normalize_data=True;
+b_normalize_data=False;
 b_standardize_data=False;
 l_norm_scaler =[[],[]]; #scalers for norm
 data_config_df=pd.DataFrame()
@@ -61,7 +61,7 @@ def get_and_reformat_all_data(datadir_gen,config_filename):
     global data_config_df
     bTarget_separate_dir=False; #by default Input and Target features are in same directories
     bTest_separate_dir = True; # By default test and train are different directories
-    exclude_str = 'None'
+    exclude_str_list = []
     
     def concatenate_all_values_with(datadir_gen,values_list):          
          return [datadir_gen + value for value in values_list]
@@ -77,8 +77,21 @@ def get_and_reformat_all_data(datadir_gen,config_filename):
     
     
     if not(data_config_df.loc['train_exclude_features'].dropna().empty):
-         exclude_str=data_config_df.loc['train_exclude_features'].values[0]
-    
+             
+             for i in range( data_config_df.loc['train_exclude_features'].count()):
+                  if type(data_config_df.loc['train_exclude_features'].values[i])==str:
+                     print (type(data_config_df.loc['train_exclude_features'].values[i]))
+                     exclude_str_list.append(data_config_df.loc['train_exclude_features'].values[i])
+#                     continue;
+                  else:
+                      break;
+#                 if type(data_config_df.loc['train_exclude_features'].values[i])==float:
+#                     print (type(data_config_df.loc['train_exclude_features'].values[i]))
+#                     continue;
+#                 else:
+#                     print (type(data_config_df.loc['train_exclude_features'].values[i]))
+#                     exclude_str_list.append(data_config_df.loc['train_exclude_features'].values[i])
+             
    # print ('exclude_str',exclude_str)
 
                
@@ -111,6 +124,11 @@ def get_and_reformat_all_data(datadir_gen,config_filename):
          test_datadir_list=concatenate_all_values_with(datadir_gen, data_config_df.loc['test_dir'].dropna().tolist()) 
     
     
+     #Test set dir 
+    #empty test_dir field value indicates Test will be split from training data, hence same folder
+    if not( data_config_df.loc['val_dir'].dropna().empty) :
+         # test is different directory and needs to be loaded separately
+         val_datadir_list=concatenate_all_values_with(datadir_gen, data_config_df.loc['val_dir'].dropna().tolist()) 
     
     #results
     results_dir=concatenate_all_values_with(datadir_gen, data_config_df.loc['results_dir'].dropna().tolist() )
@@ -134,7 +152,7 @@ def get_and_reformat_all_data(datadir_gen,config_filename):
 #
     #one of the data directories is sufficient to get filenames
     
-    input_x_filenames_list = get_input_feature_filenames(train_datadir_list,include_str,exclude_str)
+    input_x_filenames_list = get_input_feature_filenames(train_datadir_list,include_str,exclude_str_list)
   
 
 
@@ -142,15 +160,18 @@ def get_and_reformat_all_data(datadir_gen,config_filename):
          #load test and train set separately
          _trainX_Stream,_trainY_Stream=load_files_from_folders(train_datadir_list,input_x_filenames_list,target_datadir_list,y_filename_list)
          _testX_Stream,_testY_Stream=load_files_from_folders(test_datadir_list,input_x_filenames_list,test_datadir_list,y_filename_list)
+         _valX_Stream,_valY_Stream=load_files_from_folders(val_datadir_list,input_x_filenames_list,val_datadir_list,y_filename_list)
+
     else: 
          #load just from train directory once and split 
         _trainX_Stream,_trainY_Stream=load_files_from_folders(train_datadir_list,input_x_filenames_list,target_datadir_list,y_filename_list)
         _trainX_Stream,_trainY_Stream,_testX_Stream,_testY_Stream=splitTestTrainData(_trainX_Stream,_trainY_Stream,test_train_split)
+        
          
      
-    return _trainX_Stream,_trainY_Stream,_testX_Stream,_testY_Stream
+    return _trainX_Stream,_trainY_Stream,_testX_Stream,_testY_Stream,_valX_Stream,_valY_Stream
 
-def get_input_feature_filenames(datadir, include_str, exclude_str):
+def get_input_feature_filenames(datadir, include_str, exclude_str_list):
     ''' Basic function to get filenames of input features in a folder
         Arguments: data_dir: one of the data directories is sufficient to get filenames
                    include_str: include files with this string
@@ -162,14 +183,22 @@ def get_input_feature_filenames(datadir, include_str, exclude_str):
   #x_feature_types=[];
     x_feature_all_list=os.listdir(datadir[0]);
     
-    if  ~(include_str == 'all'):   
+    if  not(include_str == 'all'):   
         print ("Including only",include_str)
         x_feature_all_list = [s for s in x_feature_all_list if include_str in str(s)]
     
-    
-    if ~(exclude_str =='None'):
-         ex_matches = [s for s in x_feature_all_list if exclude_str in str(s)]
-         
+    ex_matches=[]
+    if not(exclude_str_list[0] =='None'):
+         print ("exclude_str_list",len(exclude_str_list))
+         for idx_ex in range(len(exclude_str_list)):
+             exclude_str=exclude_str_list[idx_ex]
+             
+             this_ex_matches=[s for s in x_feature_all_list if exclude_str in str(s)]
+            
+             ex_matches= itertools.chain(ex_matches,this_ex_matches)
+             print( ex_matches)
+             
+             
          for match in ex_matches :
              print ("Excluding: ",match) 
              x_feature_all_list.pop(x_feature_all_list.index(match))
@@ -471,6 +500,7 @@ def normalizeEachFeature(list_unNormalizedData, b_Train):
             if b_Train == True:
                 norm_scaler_feature = MinMaxScaler(feature_range=(0, 1))
                 norm_scaler_feature = norm_scaler_feature.fit(this_feature_1D)
+                print ("Min Max Scale",norm_scaler_feature.data_min_,norm_scaler_feature.data_max_,norm_scaler_feature.scale_)
                 l_norm_scaler[idx_dataset].append(norm_scaler_feature)
             else:
                 #if test set, use scalers fitted to corresponding train set feature
@@ -580,20 +610,28 @@ def standardizeEachFeature(list_nonStdData,b_Train):
 
 
 
-def preProcessData(_trainX,_trainY,_testX,_testY):
+def preProcessData(_trainX,_trainY,_testX,_testY,_valX,_valY):
 
-   if b_PrintShapes: print ('Processed Data Input Train X, test X shapes',_trainX.shape,_testX.shape)
-   if b_PrintShapes: print ('Processed Data Input Train Y, test Y shape',_trainY.shape,_testY.shape)
-      
+   if b_PrintShapes: print ('Processed Data Input Train X, test X shapes,Val X shape',_trainX.shape,_testX.shape,_valX.shape)
+   if b_PrintShapes: print ('Processed Data Input Train Y, test Y shape,Val Y shape',_trainY.shape,_testY.shape,_valY.shape)
+       
    # reshape targeet from [batch_size,] to [batch_size,1]
       
    _trainY=np.reshape(_trainY,(-1,1))
    _testY=np.reshape(_testY,(-1,1))
+   _valY=np.reshape(_valY,(-1,1))
    
    if b_normalize_data == True:
        
+       print ("saving normalized")
+       #save_as_mat(['inputs','unNormalized'],dict([ ('u_trainX', _trainX), ('u_trainY', _trainY),('u_testX',_testX),('u_testY',_testY),('u_valX',_valX),('u_testY',_valY)]))
+
+       
        [_trainX,_trainY]=normalizeEachFeature([_trainX,_trainY],b_Train=True)
        [_testX,_testY]=normalizeEachFeature([_testX,_testY],b_Train=False)
+       [_valX,_valY]=normalizeEachFeature([_valX,_valY],b_Train=False)
+       #save_as_mat(['inputs','Normalized'],dict([ ('n_trainX', _trainX), ('n_trainY', _trainY),('n_testX',_testX),('n_testY',_testY)]))
+
        #clear scaler after train and test have been normalized
        
        clearNormScalerList()
@@ -608,10 +646,10 @@ def preProcessData(_trainX,_trainY,_testX,_testY):
 
    
    
-   if b_PrintShapes: print ('Processed Data o/p Train X, test X shapes',_trainX.shape,_testX.shape)
-   if b_PrintShapes: print ('Processed Data o/p Train Y, test Y shape',_trainY.shape,_testY.shape)
+   if b_PrintShapes: print ('Processed Data o/p Train X, test X shapes',_trainX.shape,_testX.shape,_valX.shape)
+   if b_PrintShapes: print ('Processed Data o/p Train Y, test Y shape',_trainY.shape,_testY.shape,_valY.shape)
    
-   return _trainX,_trainY,_testX,_testY
+   return _trainX,_trainY,_testX,_testY,_valX,_valY
 
 def shuffle_in_unison(a, b):
     rng_state = np.random.get_state()

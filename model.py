@@ -54,6 +54,13 @@ class RNN_Model(object):
 
              self.create_RNN_FC_network(params_dict)
              
+         elif    model_type == 'cLSTM':
+             print ('cuda LSTM Architecture') 
+             self.net_type='cLSTM'   
+             # RNN structure  
+
+             self.create_RNN_FC_network(params_dict) 
+         
          elif model_type=='DNN':
               print ('DNN Arch')
               self.net_type='DNN'   
@@ -176,7 +183,12 @@ class RNN_Model(object):
                    #print ("Cell input keep: %f  output keep: %f state keep %f" %(flt_in_keep,flt_out_keep,flt_state_keep))
                  
                    
-                   if self.net_type == 'LSTM':                   
+                   if self.net_type == 'LSTM':   
+                        print ('Simple LSTM')
+                        self.rnn_layers = tf.contrib.rnn.MultiRNNCell([self.get_LSTM(self.num_hidden) for _ in range(self.num_rnn_layers)])
+                    
+                   elif self.net_type == 'cLSTM':
+                        print ('cuda LSTM Architecture')
                         self.rnn_layers = tf.contrib.rnn.MultiRNNCell([self.get_cudnnLSTM(self.num_hidden) for _ in range(self.num_rnn_layers)])
                  
                    elif self.net_type == 'GRU':
@@ -347,7 +359,7 @@ class RNN_Model(object):
                    for _ in range(self.num_batches):
                         
                         if bSaveInput:
-                             print('Saving noised and shuffled input ', )
+                             #print('Saving noised and shuffled input ', )
                              [batch_X_shuffled,batch_X_shuffled_noised]=sess.run([self.batch_X,self.batch_X_noised],feed_dict={self.std_noise_tf:self.inj_noise_std})
                              dm.save_as_mat(['inputs','shuffled_input'],dict([ ('batch_X_shuffled_noised', batch_X_shuffled_noised), ('batch_X_shuffled', batch_X_shuffled)]))
                              bSaveInput = False;

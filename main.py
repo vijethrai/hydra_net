@@ -26,7 +26,7 @@ MAIN Function
 
 # File and Directory attributes
 datadir_gen = '/media/raiv/Data_linux/GDrive_linux/DeepLearning/data/xsens_data/'
-config_file='data_config_alpha.csv'
+config_file='data_config_stairs_only_norm.csv'
 timestamp= datetime.now().strftime("%m_%d_%H_%M")
 
 if __name__ == "__main__":
@@ -40,10 +40,10 @@ if __name__ == "__main__":
 
 
  
-  param_vals = {'learning_rate': [0.001], 'epoch': [50], 'batch_size':[32,50],
-               'seq_length':[5,10,20,100],'num_rnn_layers':[2],'num_hid_units':[4],'reg_parameter':[0.0015,0.0025],'noise_std':[0.01,0.1]}
+  param_vals = {'learning_rate': [0.001], 'epoch': [50], 'batch_size':[32],
+               'seq_length':[10],'num_rnn_layers':[2],'num_hid_units':[4],'reg_parameter':[0.0015],'noise_std':[0.01]}
 
-  model_type='LSTM'
+  model_type='cLSTM'
   
   dm.set_global_flags(model_type,timestamp)
   dm.save_settings(param_vals) 
